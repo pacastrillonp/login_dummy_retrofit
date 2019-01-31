@@ -5,11 +5,10 @@ import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
 import android.util.Log
-import android.widget.Toast
+import co.test.logindummiemvvm.MVVMApplication
 import co.test.logindummiemvvm.R
 import co.test.logindummiemvvm.adapter.AccountsAdapter
-import co.test.logindummiemvvm.model.AccountsRequest
-import co.test.logindummiemvvm.network.LoginWebService
+import co.test.logindummiemvvm.model.Account
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.schedulers.Schedulers
@@ -21,22 +20,19 @@ import kotlinx.android.synthetic.main.activity_login.*
 class LoginActivity : AppCompatActivity() {
 
     private var accountsListAdapter: AccountsAdapter? = null
-    private var accountsList: ArrayList<AccountsRequest>? = null
-    private var loginWebService: LoginWebService? = null
-
+    private var accountsList: ArrayList<Account>? = null
 
     private var mCompositeDisposable: CompositeDisposable? = null
 
-
-
+    companion object {
+        private val sessionAPI = MVVMApplication.injectSessionAPI()
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_login)
         // Set up the login form.
-        loginWebService = LoginWebService()
         initAccountsRecyclerView()
-        mCompositeDisposable = CompositeDisposable()
         initControllers()
     }
 
@@ -49,34 +45,15 @@ class LoginActivity : AppCompatActivity() {
 
     private fun initControllers() {
         bt_sign_in.setOnClickListener {
-            val requestInterface =   loginWebService?.getAccounts("pablo.castrillon@tekus.co")
-
-            if (requestInterface != null) {
-                mCompositeDisposable?.add(requestInterface.getAccounts()
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribeOn(Schedulers.io())
-                    .subscribe(this::handleResponse, this::handleError))
-            }
-
-            Toast.makeText(this@LoginActivity, "You clicked me.", Toast.LENGTH_SHORT).show()
+            sessionAPI.getAccounts("pablo.castrillon@tekus.co")
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribeOn(Schedulers.io())
+                .subscribe{
+                    Log.d("PABLO", it.first().legalName)
+                }
         }
 
     }
-
-
-    private fun handleResponse(androidList: List<AccountsRequest>) {
-        accountsList = ArrayList(androidList)
-        println(androidList)
-
-
-    }
-
-    private fun handleError(error: Throwable) {
-
-        Log.d("", error.localizedMessage)
-    }
-
-
 
 }
 
